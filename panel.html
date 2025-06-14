@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/png" href="favicon.ico">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TFG - ESP32C3 Panel de Control </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        .blink {
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+        <!-- Header with University Logos -->
+        <header class="mb-8">
+            <div class="flex items-center justify-between">
+                <div class="w-1/4 flex justify-start">
+                    <img src="us.png" style="height: 100px;">
+                </div>
+                <div class="text-center flex-1">
+                    <h1 class="text-3xl font-bold text-indigo-800">Centro de Control ESP32</h1>
+                    <p class="text-gray-600 mt-2">TFG Gonzalo Jiménez Alonso</p>
+                </div>
+                <div class="w-1/4 flex justify-end">
+                    <img src="etsi.png" style="height: 120px;">
+                </div>
+            </div>
+        </header>
+
+        <!-- Connection Status -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-800">Estado de Conexión</h2>
+                    <p id="connection-status" class="text-gray-600">Dispositivo no conectado</p>
+                </div>
+                <button id="connect-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition-colors">
+                    <i class="fab fa-bluetooth-b mr-2"></i>Conectar
+                </button>
+            </div>
+            <div id="device-info" class="mt-4 hidden">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm text-gray-500">Dispositivo:</p>
+                        <p id="device-name" class="font-medium">-</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Estado:</p>
+                        <p id="connection-state" class="font-medium">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mode Selection -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Seleccionar Modo</h2>
+            <div class="flex space-x-4">
+                <button id="comfort-mode-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg transition-colors font-medium">
+                    <i class="fas fa-thermometer-half mr-2"></i>Modo Confort
+                </button>
+                <button id="anti-theft-mode-btn" class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg transition-colors font-medium">
+                    <i class="fas fa-shield-alt mr-2"></i>Modo Antirrobo
+                </button>
+            </div>
+        </div>
+
+        <!-- Comfort Mode Panel -->
+        <div id="comfort-panel" class="bg-white rounded-xl shadow-md p-6 mb-8 transition-all duration-300">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-800">
+                    <i class="fas fa-thermometer-half mr-2 text-green-600"></i>Modo Confort
+                </h2>
+                <span id="comfort-status-label" class="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full">Inactivo</span>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-sm text-gray-500">Temperatura Actual</p>
+                        <p class="text-3xl font-bold text-gray-800">
+                            <span id="temperature-value">--</span>
+                            <span class="text-xl">°C</span>
+                        </p>
+                    </div>
+                    <div class="text-4xl text-red-500">
+                        <i class="fas fa-temperature-high"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <p class="text-sm text-gray-500">Control del Ventilador</p>
+                    <button id="fan-mode-btn" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs ml-2">Modo Automático</button>
+                </div>
+                <div class="flex justify-between space-x-2">
+                    <button id="fan-off-btn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded transition-colors">
+                        <i class="fas fa-power-off mr-2"></i>Apagado
+                    </button>
+                    <button id="fan-med-btn" class="flex-1 bg-blue-200 hover:bg-blue-300 text-blue-800 px-4 py-2 rounded transition-colors">
+                        <i class="fas fa-fan mr-2"></i>Medio
+                    </button>
+                    <button id="fan-max-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition-colors">
+                        <i class="fas fa-fan mr-2"></i>Máximo
+                    </button>
+                </div>
+                <p class="text-sm mt-3 text-gray-600">
+                    Estado actual: <span id="fan-status" class="font-medium">No disponible</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Anti-Theft Panel -->
+        <div id="anti-theft-panel" class="bg-white rounded-xl shadow-md p-6 mb-8 hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-800">
+                    <i class="fas fa-shield-alt mr-2 text-red-600"></i>Modo Antirrobo
+                </h2>
+                <span id="antitheft-status-label" class="bg-red-100 text-red-800 text-xs px-3 py-1 rounded-full">Inactivo</span>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-6 text-center">
+                <div class="flex flex-col items-center">
+                    <div id="alarm-indicator" class="w-24 h-24 rounded-full bg-gray-300 border-4 border-gray-400 flex items-center justify-center mb-4">
+                        <i class="fas fa-bell-slash text-4xl text-gray-500"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">
+                        Estado de Alarma: <span id="alarm-status">Inactiva</span>
+                    </h3>
+                    <button id="toggle-alarm-btn" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors font-medium">
+                        <i class="fas fa-shield-alt mr-2"></i>Activar Alarma
+                    </button>
+                </div>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 mt-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-sm text-gray-500">Detección de Robo</p>
+                        <p class="text-lg font-medium text-gray-800">
+                            Estado: <span id="motion-status">No detectado</span>
+                        </p>
+                    </div>
+                    <div id="motion-indicator" class="w-10 h-10 rounded-full bg-gray-300 border-2 border-gray-400"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Console -->
+        <div class="bg-gray-800 rounded-xl shadow-md p-4">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-lg font-semibold text-gray-200">
+                    <i class="fas fa-terminal mr-2"></i>Registro de Eventos
+                </h2>
+                <button id="clear-log-btn" class="text-gray-400 hover:text-white text-sm">
+                    <i class="fas fa-trash-alt mr-1"></i>Limpiar
+                </button>
+            </div>
+            <div id="log-console" class="bg-black text-green-400 font-mono text-sm p-3 rounded h-40 overflow-y-auto">
+                <p>> Sistema inicializado. Esperando conexión Bluetooth...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const connectBtn = document.getElementById('connect-btn');
+        const connectionStatus = document.getElementById('connection-status');
+        const deviceInfo = document.getElementById('device-info');
+        const deviceName = document.getElementById('device-name');
+        const connectionState = document.getElementById('connection-state');
+        const comfortModeBtn = document.getElementById('comfort-mode-btn');
+        const antiTheftModeBtn = document.getElementById('anti-theft-mode-btn');
+        const comfortPanel = document.getElementById('comfort-panel');
+        const antiTheftPanel = document.getElementById('anti-theft-panel');
+        const comfortStatusLabel = document.getElementById('comfort-status-label');
+        const antitheftStatusLabel = document.getElementById('antitheft-status-label');
+        const temperatureValue = document.getElementById('temperature-value');
+        const fanStatus = document.getElementById('fan-status');
+        const fanOffBtn = document.getElementById('fan-off-btn');
+        const fanMedBtn = document.getElementById('fan-med-btn');
+        const fanMaxBtn = document.getElementById('fan-max-btn');
+        const fanModeBtn = document.getElementById('fan-mode-btn');
+        const ledToggleBtn = document.getElementById('led-toggle-btn');
+        const ledIndicator = document.getElementById('led-indicator');
+        const alarmStatus = document.getElementById('alarm-status');
+        const alarmIndicator = document.getElementById('alarm-indicator');
+        const toggleAlarmBtn = document.getElementById('toggle-alarm-btn');
+        const motionStatus = document.getElementById('motion-status');
+        const motionIndicator = document.getElementById('motion-indicator');
+        const logConsole = document.getElementById('log-console');
+        const clearLogBtn = document.getElementById('clear-log-btn');
+
+        // BLE UUIDs (match your ESP32 code!)
+        const BLE_DEVICE_NAME = 'ESP32';
+        const BLE_SERVICE_UUID = '19b10000-e8f2-537e-4f6c-d104768a1214';
+        const BLE_CHARACTERISTIC_UUID = '19b10002-e8f2-537e-4f6c-d104768a1214';
+
+        // Bluetooth variables
+        let bluetoothDevice = null;
+        let bluetoothServer = null;
+        let bluetoothService = null;
+        let bluetoothCharacteristic = null;
+        let isConnected = false;
+        let currentMode = 'comfort'; // Comfort is default
+        let modeActivated = false;   // Track if the user has selected a mode at least once
+
+        // Device state
+        let deviceState = {
+            led: false,
+            fan: 'off',           // "off", "med", "max"
+            fanMode: 'auto',      // "auto" or "manual"
+            temperature: null,
+            alarm: false,
+            motion: false
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            addLog('Aplicación cargada. Haga clic en "Conectar" para establecer conexión Bluetooth.');
+            updateUI();
+        });
+
+        connectBtn.addEventListener('click', toggleBluetoothConnection);
+        comfortModeBtn.addEventListener('click', () => switchMode('comfort'));
+        antiTheftModeBtn.addEventListener('click', () => switchMode('anti-theft'));
+        fanOffBtn.addEventListener('click', () => {
+    		if (deviceState.fanMode === 'manual') sendFanCommand('off');
+	});
+	fanMedBtn.addEventListener('click', () => {
+    		if (deviceState.fanMode === 'manual') sendFanCommand('med');
+	});
+	fanMaxBtn.addEventListener('click', () => {
+    		if (deviceState.fanMode === 'manual') sendFanCommand('max');
+	});
+        fanModeBtn.addEventListener('click', () => {
+            if (deviceState.fanMode === 'auto') {
+                sendFanCommand('off'); // Switch to manual, fan off
+            } else {
+                sendFanCommand('auto'); // Switch to auto
+            }
+        });
+        if (ledToggleBtn)
+            ledToggleBtn.addEventListener('click', toggleLed);
+        toggleAlarmBtn.addEventListener('click', toggleAlarm);
+        clearLogBtn.addEventListener('click', clearLog);
+
+        async function toggleBluetoothConnection() {
+            if (isConnected) {
+                await disconnectBluetooth();
+            } else {
+                await connectBluetooth();
+            }
+        }
+
+        async function connectBluetooth() {
+            try {
+                addLog('Iniciando conexión Bluetooth...');
+                bluetoothDevice = await navigator.bluetooth.requestDevice({
+                    filters: [{ name: BLE_DEVICE_NAME }],
+                    optionalServices: [BLE_SERVICE_UUID]
+                });
+                addLog(`Dispositivo encontrado: ${bluetoothDevice.name}`);
+                bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
+                addLog('Conectando al servidor GATT...');
+                bluetoothServer = await bluetoothDevice.gatt.connect();
+                addLog('Obteniendo servicio...');
+                bluetoothService = await bluetoothServer.getPrimaryService(BLE_SERVICE_UUID);
+                bluetoothCharacteristic = await bluetoothService.getCharacteristic(BLE_CHARACTERISTIC_UUID);
+                await bluetoothCharacteristic.startNotifications();
+                bluetoothCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
+                isConnected = true;
+                updateConnectionStatus();
+                updateUI();
+                addLog('Conexión establecida correctamente. Listo para enviar/recepcionar datos.');
+            } catch (error) {
+                addLog(`Error de conexión: ${error}`, 'error');
+                console.error('Bluetooth connection error:', error);
+                isConnected = false;
+                updateConnectionStatus();
+                updateUI();
+            }
+        }
+
+        async function disconnectBluetooth() {
+            try {
+                if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+                    addLog('Desconectando dispositivo Bluetooth...');
+                    await bluetoothDevice.gatt.disconnect();
+                }
+            } catch (error) {
+                addLog(`Error al desconectar: ${error}`, 'error');
+                console.error('Disconnection error:', error);
+            } finally {
+                isConnected = false;
+                bluetoothDevice = null;
+                bluetoothServer = null;
+                bluetoothService = null;
+                bluetoothCharacteristic = null;
+                updateConnectionStatus();
+                updateUI();
+            }
+        }
+
+        function onDisconnected() {
+            addLog('Dispositivo desconectado inesperadamente.', 'warning');
+            isConnected = false;
+            updateConnectionStatus();
+            updateUI();
+        }
+
+        function handleNotifications(event) {
+            const value = event.target.value;
+            const decoder = new TextDecoder('utf-8');
+            const message = decoder.decode(value);
+            addLog(`Datos recibidos: ${message}`, 'data');
+
+            // Try to parse as JSON first (fan, motion, etc)
+            try {
+                const data = JSON.parse(message);
+                // Fan status
+                if (data.fan_mode && data.fan_level) {
+                    deviceState.fanMode = data.fan_mode;
+                    deviceState.fan = data.fan_level;
+                    updateFanUI();
+                    updateUI();
+                    return;
+                }
+                // Motion
+                if ('motion' in data) {
+                    deviceState.motion = !!data.motion;
+                    updateUI();
+                    return;
+                }
+                // Other fields: temperature etc.
+                updateDeviceState(data);
+                return;
+            } catch (e) {}
+
+            // Fallback: check for float (temperature)
+            const temp = parseFloat(message);
+            if (!isNaN(temp)) {
+                deviceState.temperature = temp;
+                if (currentMode === 'comfort') {
+                    updateTemperatureDisplay(temp);
+                }
+                return;
+            }
+
+            // Fallback: check for "true"/"false" as string (legacy)
+            const msg = message.trim().toLowerCase();
+            if (msg === "true" || msg === "false") {
+                const newMotion = (msg === "true");
+                if (deviceState.motion !== newMotion) {
+                    deviceState.motion = newMotion;
+                    updateUI();
+                }
+            }
+        }
+
+        function updateTemperatureDisplay(temp) {
+            if (currentMode === 'comfort' && typeof temperatureValue !== "undefined" && temperatureValue) {
+                temperatureValue.textContent = temp !== null && temp !== undefined
+                    ? Number(temp).toFixed(1)
+                    : '--';
+            }
+        }
+
+        function sendCommand(command) {
+            if (!isConnected || !bluetoothCharacteristic) {
+                addLog('No se puede enviar comando: dispositivo no conectado', 'error');
+                return;
+            }
+            const encoder = new TextEncoder('utf-8');
+            const data = encoder.encode(command);
+            bluetoothCharacteristic.writeValue(data)
+                .then(() => { addLog(`Comando enviado: ${command}`, 'command'); })
+                .catch(error => {
+                    addLog(`Error al enviar comando: ${error}`, 'error');
+                    console.error('Command send error:', error);
+                });
+        }
+
+        function sendFanCommand(mode) {
+            sendCommand(`fan:${mode}`);
+        }
+
+        function toggleLed() {
+            deviceState.led = !deviceState.led;
+            updateUI();
+            sendCommand(`led:${deviceState.led ? 'on' : 'off'}`);
+        }
+
+        function toggleAlarm() {
+            deviceState.alarm = !deviceState.alarm;
+            updateUI();
+            sendCommand(`alarm:${deviceState.alarm ? 'on' : 'off'}`);
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            modeActivated = true;
+            updateUI();
+            sendCommand(mode === 'comfort' ? 'c' : 'a');
+        }
+
+        function updateConnectionStatus() {
+            if (isConnected) {
+                connectionStatus.textContent = 'Conectado';
+                connectionStatus.className = 'text-green-600 font-medium';
+                connectBtn.innerHTML = '<i class="fas fa-bluetooth-b mr-2"></i>Desconectar';
+                connectBtn.className = 'bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors';
+                deviceInfo.classList.remove('hidden');
+                deviceName.textContent = bluetoothDevice?.name || 'Desconocido';
+                connectionState.textContent = 'Conectado';
+            } else {
+                connectionStatus.textContent = 'Dispositivo no conectado';
+                connectionStatus.className = 'text-gray-600';
+                connectBtn.innerHTML = '<i class="fas fa-bluetooth-b mr-2"></i>Conectar';
+                connectBtn.className = 'bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition-colors';
+                deviceInfo.classList.add('hidden');
+            }
+        }
+
+        function updateDeviceState(data) {
+            if (data.led !== undefined) deviceState.led = data.led;
+            if (data.fan !== undefined) deviceState.fan = data.fan;
+            if (data.fan_mode) deviceState.fanMode = data.fan_mode;
+            if (data.temperature !== undefined) {
+                deviceState.temperature = data.temperature;
+                if (currentMode === 'comfort') {
+                    updateTemperatureDisplay(deviceState.temperature);
+                }
+            }
+            if (data.alarm !== undefined) deviceState.alarm = data.alarm;
+            if (data.motion !== undefined) deviceState.motion = !!data.motion;
+            updateFanUI();
+            updateUI();
+        }
+
+        function updateFanUI() {
+            // Update the mode button
+            fanModeBtn.textContent = deviceState.fanMode === 'auto' ? 'Modo Manual' : 'Modo Automático';
+            if (deviceState.fanMode === 'auto') {
+                fanOffBtn.classList.add('disabled');
+                fanMedBtn.classList.add('disabled');
+                fanMaxBtn.classList.add('disabled');
+            } else {
+                fanOffBtn.classList.remove('disabled');
+                fanMedBtn.classList.remove('disabled');
+                fanMaxBtn.classList.remove('disabled');
+            }
+        }
+
+        function updateUI() {
+            if (currentMode === 'comfort') {
+                comfortPanel.classList.remove('hidden');
+                antiTheftPanel.classList.add('hidden');
+            } else if (currentMode === 'anti-theft') {
+                comfortPanel.classList.add('hidden');
+                antiTheftPanel.classList.remove('hidden');
+            }
+
+            comfortStatusLabel.textContent = (isConnected && currentMode === 'comfort' && modeActivated) ? 'Activo' : 'Inactivo';
+            comfortStatusLabel.className = (isConnected && currentMode === 'comfort' && modeActivated)
+                ? 'bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full'
+                : 'bg-gray-200 text-gray-700 text-xs px-3 py-1 rounded-full';
+
+            antitheftStatusLabel.textContent = (isConnected && currentMode === 'anti-theft' && modeActivated) ? 'Activo' : 'Inactivo';
+            antitheftStatusLabel.className = (isConnected && currentMode === 'anti-theft' && modeActivated)
+                ? 'bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full'
+                : 'bg-gray-200 text-gray-700 text-xs px-3 py-1 rounded-full';
+
+            if (currentMode === 'comfort') {
+                updateTemperatureDisplay(deviceState.temperature);
+                let fanText = '';
+                let fanColor = '';
+                switch (deviceState.fan) {
+                    case 'off':
+                        fanText = 'Apagado';
+                        fanColor = 'text-gray-600';
+                        fanOffBtn.classList.add('bg-gray-300');
+                        fanMedBtn.classList.remove('bg-blue-300');
+                        fanMaxBtn.classList.remove('bg-blue-700');
+                        break;
+                    case 'med':
+                        fanText = 'Medio';
+                        fanColor = 'text-blue-600';
+                        fanOffBtn.classList.remove('bg-gray-300');
+                        fanMedBtn.classList.add('bg-blue-300');
+                        fanMaxBtn.classList.remove('bg-blue-700');
+                        break;
+                    case 'max':
+                        fanText = 'Máximo';
+                        fanColor = 'text-blue-800';
+                        fanOffBtn.classList.remove('bg-gray-300');
+                        fanMedBtn.classList.remove('bg-blue-300');
+                        fanMaxBtn.classList.add('bg-blue-700');
+                        break;
+                    default:
+                        fanText = 'Desconocido';
+                        fanColor = 'text-gray-600';
+                }
+                fanStatus.textContent = fanText;
+                fanStatus.className = `font-medium ${fanColor}`;
+                if (ledIndicator) {
+                    if (deviceState.led) {
+                        ledIndicator.className = 'w-8 h-8 rounded-full bg-yellow-300 border-2 border-yellow-500 shadow-sm shadow-yellow-200';
+                    } else {
+                        ledIndicator.className = 'w-8 h-8 rounded-full bg-gray-300 border-2 border-gray-400';
+                    }
+                }
+                updateFanUI();
+            } else if (currentMode === 'anti-theft') {
+                if (deviceState.alarm) {
+                    alarmStatus.textContent = 'Activa';
+                    alarmStatus.className = 'text-red-600 font-bold';
+                    alarmIndicator.className = 'w-24 h-24 rounded-full bg-red-500 border-4 border-red-700 flex items-center justify-center mb-4 blink';
+                    alarmIndicator.innerHTML = '<i class="fas fa-bell text-4xl text-white"></i>';
+                    toggleAlarmBtn.innerHTML = '<i class="fas fa-bell-slash mr-2"></i>Desactivar Alarma';
+                    toggleAlarmBtn.className = 'bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors font-medium';
+                } else {
+                    alarmStatus.textContent = 'Inactiva';
+                    alarmStatus.className = 'text-gray-600';
+                    alarmIndicator.className = 'w-24 h-24 rounded-full bg-gray-300 border-4 border-gray-400 flex items-center justify-center mb-4';
+                    alarmIndicator.innerHTML = '<i class="fas fa-bell-slash text-4xl text-gray-500"></i>';
+                    toggleAlarmBtn.innerHTML = '<i class="fas fa-shield-alt mr-2"></i>Activar Alarma';
+                    toggleAlarmBtn.className = 'bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors font-medium';
+                }
+                if (deviceState.motion === true) {
+                    motionStatus.textContent = 'Intruso detectado!';
+                    motionStatus.className = 'text-red-600 font-bold';
+                    motionIndicator.className = 'w-10 h-10 rounded-full bg-red-500 border-2 border-red-700 pulse';
+                } else {
+                    motionStatus.textContent = 'No detectado';
+                    motionStatus.className = 'text-gray-600';
+                    motionIndicator.className = 'w-10 h-10 rounded-full bg-gray-300 border-2 border-gray-400';
+                }
+            }
+            if (currentMode === 'comfort') {
+                comfortModeBtn.classList.add('bg-green-700');
+                comfortModeBtn.classList.remove('bg-green-600');
+                antiTheftModeBtn.classList.add('bg-red-600');
+                antiTheftModeBtn.classList.remove('bg-red-700');
+            } else if (currentMode === 'anti-theft') {
+                comfortModeBtn.classList.add('bg-green-600');
+                comfortModeBtn.classList.remove('bg-green-700');
+                antiTheftModeBtn.classList.add('bg-red-700');
+                antiTheftModeBtn.classList.remove('bg-red-600');
+            }
+        }
+
+        function addLog(message, type = 'info') {
+            const now = new Date();
+            const timestamp = now.toLocaleTimeString();
+            let logClass = '';
+            switch (type) {
+                case 'error': logClass = 'text-red-400'; break;
+                case 'warning': logClass = 'text-yellow-400'; break;
+                case 'success': logClass = 'text-green-400'; break;
+                case 'command': logClass = 'text-blue-400'; break;
+                case 'data': logClass = 'text-purple-400'; break;
+                default: logClass = 'text-gray-400';
+            }
+            const logEntry = document.createElement('p');
+            logEntry.innerHTML = `<span class="text-gray-500">[${timestamp}]</span> <span class="${logClass}">${message}</span>`;
+            logConsole.appendChild(logEntry);
+            logConsole.scrollTop = logConsole.scrollHeight;
+        }
+
+        function clearLog() {
+            logConsole.innerHTML = '<p>> Registro limpiado. Sistema listo.</p>';
+        }
+    </script>
+</body>
+</html>
