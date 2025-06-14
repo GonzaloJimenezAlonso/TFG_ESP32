@@ -142,7 +142,7 @@ All GNDs --------- GND
 
 1. **Connect the hardware** as per the schematic (see `/docs/schematics/` if available).
 2. **Flash the ESP32-C3** with the provided firmware (`main.ino` or equivalent).
-3. **Launch the web interface** (see `/web/` or follow deployment instructions).
+3. **Launch the web interface**  You can access the control panel directly at: [https://gonzalojimenezalonso.github.io/TFG_ESP32/](https://gonzalojimenezalonso.github.io/TFG_ESP32/)
 4. **Pair via BLE** and interact with the system!
 
 ---
