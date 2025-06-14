@@ -13,6 +13,9 @@ Welcome to the website and code repository for my final degree project: **Protot
 - [License](#license)
 
 ---
+> **Note:**  
+> Prior to this project, I conducted an analysis of the system requirements using the Texas Instruments F28335 microcontroller.  
+> You can find the analysis code [here: `_F28335_analysis/main.c`](https://github.com/GonzaloJimenezAlonso/TFG_ESP32/blob/main/main.c).
 
 ## Project Overview
 
