@@ -73,6 +73,50 @@ This TFG presents a smart system for home automation and security, built around 
                                              |  |  HC-SR04 Sonar   |   |
                                              +------------------+---+
 ```
+### PIN LAYOUT
+![image](https://github.com/user-attachments/assets/a4d01df6-7396-41a5-aa3c-14b76e6b2393)
+
+Below is the pin assignment for connecting the ESP32-C3 to external components. Pin numbers refer to the ESP32-C3’s GPIOs.
+
+| ESP32-C3 Pin | Connected Hardware                                                                       | Notes/Links                                                                                          |
+|--------------|-----------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| GPIO2        | [LM35 Temperature Sensor](https://wiki.dfrobot.com/DFRobot_LM35_Linear_Temperature_Sensor__SKU_DFR0023_) (Analog OUT)                 | Reads analog temperature (A0)                                                                        |
+| GPIO3        | [ADXL335 Accelerometer](https://wiki.dfrobot.com/Triple_Axis_Accelerometer_MMA7361_SKU_DFR0143) (X axis Analog OUT) | X-axis analog output                                                                                |
+| GPIO4        | [ADXL335 Accelerometer](https://wiki.dfrobot.com/Triple_Axis_Accelerometer_MMA7361_SKU_DFR0143) (Y axis Analog OUT) | Y-axis analog output                                                                                |                                                                             |
+| GPIO4        | [HC-SR04 Ultrasonic Sensor](https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf) (Trigger)   | Trigger pin                                                                                         |
+| GPIO5        | [HC-SR04 Ultrasonic Sensor](https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf) (Echo)      | Echo pin                                                                                            |
+| GPIO6        | [16x2 I2C LCD Display](https://learn.adafruit.com/i2c-spi-lcd-backpack/overview) (SDA)                | SDA line for I2C                                                                                   |
+| GPIO7        | [16x2 I2C LCD Display](https://learn.adafruit.com/i2c-spi-lcd-backpack/overview) (SCL)                | SCL line for I2C                                                                                   |
+| GPIO8        | [Buzzer/Speaker](https://www.electronicwings.com/nodemcu/buzzer-interfacing-with-nodemcu) (PWM OUT)    | Alarm sound                                                                                         |
+| GPIO9        | [LED Indicator](https://www.sparkfun.com/products/9590) (Digital OUT)                                   | Alarm indicator                                                                                     |
+| GPIO10       | [Fan/Motor Module](https://components101.com/motors/5v-dc-fan) (PWM OUT)                                | Fan control (PWM)                                                                                   |
+| 3V3          | Power for sensors (as needed)                                                                            | Up to 700mA from onboard regulator                                                                  |
+| 5V           | Main power input/output                                                                                  | Use with a [Schottky Diode](https://www.vishay.com/docs/88540/ss14.pdf) for safety                  |
+| GND          | Common ground for all components                                                                        |                                                                                                     |
+
+> **Note:**  
+> - Double-check your ESP32-C3 board’s silkscreen or documentation for exact pin header locations.
+> - Some I2C LCD modules might use different default I2C addresses (usually 0x27 or 0x3F).
+
+---
+
+### **Wiring Diagram Example**
+
+```
+LM35 (OUT) -------- GPIO0 (ADC)
+ADXL335 (X/Y/Z) --- GPIO1/2/3 (ADC)
+HC-SR04 (Trig/Echo) -- GPIO4/5
+LCD (SDA/SCL) ----- GPIO6/7 (I2C)
+Buzzer ----------- GPIO8 (PWM)
+LED -------------- GPIO9 (Digital)
+Fan -------------- GPIO10 (PWM)
+All VCCs --------- 3V3/5V (as per device)
+All GNDs --------- GND
+```
+
+---
+
+**For more details, see each component’s datasheet linked above.**
 
 ---
 
@@ -110,4 +154,4 @@ This project is for educational and non-commercial use as part of a university T
 ---
 
 **Author:** Gonzalo Jiménez Alonso  
-**Contact:** [Your email or GitHub profile]
+**Contact:** [gonjimalo@alum.us.es](mailto:gonjimalo@alum.us.es)
