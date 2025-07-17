@@ -94,7 +94,7 @@ Below is the pin assignment for connecting the ESP32-C3 to external components. 
 | GPIO9        | [LED Indicator](https://www.sparkfun.com/products/9590) (Digital OUT)                                   | Alarm indicator                                                                                     |
 | GPIO10       | [Fan/Motor Module](https://components101.com/motors/5v-dc-fan) (PWM OUT)                                | Fan control (PWM)                                                                                   |
 | 3V3          | Power for sensors (as needed)                                                                            | Up to 700mA from onboard regulator                                                                  |
-| 5V           | Main power input/output                                                                                  | Use with a [Schottky Diode](https://www.vishay.com/docs/88540/ss14.pdf) for safety                  |
+| 5V           | Main power input/output                                                                                  |(https://www.vishay.com/docs/88540/ss14.pdf) for safety                  |
 | GND          | Common ground for all components                                                                        |                                                                                                     |
 
 > **Note:**  
@@ -103,17 +103,17 @@ Below is the pin assignment for connecting the ESP32-C3 to external components. 
 
 ---
 
-### **Wiring Diagram Example**
+### **Wiring Diagram**
 
 ```
-LM35 (OUT) -------- GPIO0 (ADC)
-ADXL335 (X/Y/Z) --- GPIO1/2/3 (ADC)
-HC-SR04 (Trig/Echo) -- GPIO4/5
+LM35 (OUT) -------- GPIO2 (ADC)
+Accelerometee (X/Y) --- GPIO3/4 (ADC)
+HC-SR04 (Trig/Echo) -- GPIO10/9
 LCD (SDA/SCL) ----- GPIO6/7 (I2C)
-Buzzer ----------- GPIO8 (PWM)
-LED -------------- GPIO9 (Digital)
-Fan -------------- GPIO10 (PWM)
-All VCCs --------- 3V3/5V (as per device)
+Buzzer ----------- GPIO21 (PWM)
+LED -------------- GPIO8 (Digital)
+Fan -------------- GPIO20 (PWM)
+All VCCs --------- 5V
 All GNDs --------- GND
 ```
 
